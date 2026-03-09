@@ -1,53 +1,86 @@
-#  Sistema de Proyección de Inflación Híbrido (Data-Driven)
+# Pronóstico de Inflación Venezuela 2026 — Modelo Híbrido (ARIMA + OLS)
 
-Este repositorio contiene un modelo de **Forecasting Económico** de alta precisión diseñado para entornos de volatilidad macroeconómica (basado en el contexto de Venezuela). El sistema utiliza un enfoque híbrido que combina la inercia de series de tiempo, fundamentos monetarios y simulaciones de Monte Carlo para la gestión de incertidumbre.
+## Propósito
 
-##  Características Principales
+Estimar la inflación mensual de **Venezuela durante 2026** usando un modelo híbrido que combina **inercia estadística (ARIMA)** y **regresión OLS** basada en variables macroeconómicas (variación del tipo de cambio y M2). El script limpia automáticamente los archivos de entrada, desagrega la meta anual con estacionalidad y genera un **reporte mensual + gráfico comparativo**.
 
-* **Modelo Híbrido Estocástico:** Combina la capacidad predictiva de **ARIMA (Inercia)** con la explicativa de **Regresión Lineal (OLS)**.
-* **Desagregación Estacional Proxy:** Transforma metas anuales de expertos (FMI/BCV) en una serie mensual ponderada por picos históricos (Oct-Nov-Dic).
-* **Análisis de Fundamentos:** Evalúa el impacto directo de la Liquidez Monetaria (**M2**) y la variación del **Tipo de Cambio**.
-* **Cuantificación de Riesgo:** Genera 10,000 escenarios mediante **Monte Carlo** para determinar intervalos de confianza y percentiles de probabilidad.
+## Índice
 
----
-
-##  Arquitectura del Modelo
-
-El flujo de datos se divide en tres etapas críticas:
-
-1.  **Capa Técnica (ARIMA 1,1,1):** Extrae el componente de autocorrelación de la inflación proxy.
-2.  **Capa Fundamental (Regresión OLS):** Ajusta la proyección según variables exógenas:
-    * $\Delta \% \text{ Tipo de Cambio}$
-    * $\Delta \% \text{ M2 (Lag de 1 mes)}$
-    * $\text{Predicciones ARIMA (Inercia)}$
-3.  **Capa de Simulación:** Utiliza el error estándar de los residuos ($\sigma$) para proyectar la distribución de probabilidad del siguiente periodo.
-
-
+* Visión General  
+* Fundamentos Matemáticos  
+* Parámetros del Modelo  
+* Suposiciones y Alcances  
+* Validación y Calidad de Resultados  
+* Extensiones Sugeridas  
 
 ---
 
-##  Fundamentos Matemáticos
+## Visión General
 
-### 1. Estimación de Inflación Proxy
-Para distribuir la meta anual de forma realista, aplicamos una tasa base compuesta ajustada por pesos estacionales ($w_i$):
+El algoritmo integra tres componentes clave:
 
-$$\pi_{proxy} = ((1 + \text{meta\_anual})^{1/12} - 1) \times 12 \times w_i$$
+- Meta de inflación anual obtenida del promedio de pronósticos de expertos.
+- Desagregación mensual mediante **estacionalidad venezolana**.
+- Variables macroeconómicas: **variación del tipo de cambio** y **crecimiento del M2**.
 
-### 2. Especificación de la Regresión
-$$\text{Inflación}_t = \beta_0 + \beta_1 (\text{VarDolar}_t) + \beta_2 (\text{VarM2}_{t-1}) + \beta_3 (\text{PredARIMA}_t) + \epsilon$$
+El modelo final utiliza:
+- **ARIMA(1,1,0)** → captura inercia inflacionaria.
+- **Regresión OLS** → ajusta la relación entre inflación mensual, FX, M2 y el componente ARIMA.
+
+**Salidas principales:**
+- Tabla de inflación mensual y acumulada (enero–diciembre 2026).  
+- Indicador de ajuste: **R²** del modelo OLS.  
+- Gráfico: *Meta Expertos vs Modelo Híbrido*.
 
 ---
 
-##  Implementación y Resultados
+## Fundamentos Matemáticos
 
-El sistema genera un reporte detallado de calidad estadística y proyecciones:
+### Desagregación de meta anual
 
-```text
-============================================================
-       SISTEMA DE PROYECCIÓN DE INFLACIÓN DATA-DRIVEN 2026
-============================================================
-CALIDAD DEL AJUSTE (R-Cuadrado): 0.9450
-INCERTIDUMBRE (Sigma del Modelo): 1.50%
-------------------------------------------------------------
-PREDICCIÓN PARA EL PERIODO SIGUIENTE:
-Valor Central (Más probable):
+\[
+\text{tasa}_m = (1 + \text{meta\_anual})^{1/12} - 1
+\]
+
+\[
+\text{inflación\_objetivo}_m = \text{tasa}_m \cdot 12 \cdot \frac{w_m}{\sum w}
+\]
+
+donde \( w_m \) son los pesos estacionales.
+
+### Componente ARIMA
+
+Modelo ARIMA(1,1,0):
+
+\[
+y_t = y_{t-1} + \phi (y_{t-1} - y_{t-2}) + \varepsilon_t
+\]
+
+### Regresión OLS (modelo final)
+
+\[
+\text{Inflación}_t = \beta_0 + 
+\beta_1(\Delta TC_t) +
+\beta_2(\Delta M2_t) +
+\beta_3(\text{pred\_arima}_t)
+\]
+
+Pronóstico final:
+
+\[
+\hat{y}_t = X_t \beta
+\]
+
+---
+
+## Parámetros del Modelo
+
+### Entradas requeridas (Excel)
+- `inflacion*.xlsx` → columnas numéricas con pronósticos.  
+- `tipo_cambio*.xlsx` → columna `Variacion`.  
+- `m2_bcv*.xlsx` → columna `M2`.
+
+### Estacionalidad
+
+```python
+pesos = [1.0, 0.8, 0.9, 1.1, 1.0, 0.9, 1.0, 1.2, 1.3, 1.5, 1.8, 2.0]
