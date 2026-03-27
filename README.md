@@ -4,12 +4,12 @@
 Modelar y proyectar la trayectoria de la inflación mensual y acumulada en Venezuela para el año 2026. El algoritmo utiliza un enfoque econométrico híbrido que combina metas de consenso de expertos con una regresión de **Mínimos Cuadrados Ordinarios (OLS)** ajustada por **Errores Estándar Robustos (HAC/Newey-West)** para capturar la volatilidad de la liquidez monetaria y el tipo de cambio.
 
 ## Índice
-* [Visión General](#visión-general)
-* [Fundamentos Matemáticos](#fundamentos-matemáticos)
-* [Variables del Modelo](#variables-del-modelo)
-* [Validación Estadística](#validación-estadística)
-* [Reproducibilidad](#reproducibilidad)
-* [Extensiones Sugeridas](#extensiones-sugeridas)
+* [Visión General]
+* [Fundamentos Matemáticos]
+* [Variables del Modelo]
+* [Validación Estadística]
+* [Reproducibilidad]
+* [Extensiones Sugeridas]
 
 ---
 
